@@ -10,13 +10,15 @@ class Note:
         #import pdb; pdb.set_trace()
         regex = r'([=_^]?[a-zA-Z][,\']?\d?)\/(\d)'
 
-        if self.note[0] == '[' and self.note[-1] == ']':
+        if self.note[0] == '[':
             notes = []
             matches = re.finditer(regex, self.note, re.MULTILINE)
             for matchnum, match in enumerate(matches):
                 notes += [match.group()]
         else:
-            notes = [self.note]
+            pattern = re.compile(regex)
+            note = pattern.match(self.note)
+            notes = [note.group(0)]
         return notes
 
     def __str__(self):
@@ -45,7 +47,7 @@ for line in abc:
 
 all_Notes = []
 for num in range(len(all_notes)):
-    if all_notes[num] != '':
+    if all_notes[num] != '' and all_notes[num] != '\n':
         all_Notes += [Note(all_notes[num])]
 
 for num in range(100):
