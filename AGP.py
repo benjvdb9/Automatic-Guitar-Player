@@ -18,7 +18,7 @@ class Arm(Thread):
         self.pprint('Initialized arm {}')
 
     def pprint(self, string):
-        print(self.color + string.format(self.id) + '\r' + Style.RESET_ALL,
+        print(self.color + string.format(self.id) + '\r',
               flush=True)
 
     def increaseTic(self):
@@ -96,29 +96,10 @@ init()
 supervisor = Supervisor()
 
 arms = []
-current_arm = Arm()
-current_arm.setNotes(supervisor.genRan())
-arms += [current_arm]
-##for num in range(6):
-##    current_arm = Arm()
-##    current_arm.setNotes(supervisor.genRan())
-##    arms += [current_arm]
+for num in range(6):
+    current_arm = Arm()
+    current_arm.setNotes(supervisor.genRan())
+    arms += [current_arm]
 
-#supervisor.addArms(arms)
-#supervisor.runArms()
-
-##sleep(1)
-##while True:
-##    print('TIC+', flush=True)
-##    supervisor.tic()
-##    sleep(1)
-
-def advanceClock():
-    sleep(3)
-    while True:
-        print(Fore.GREEN + 'TIC+', flush=True)
-        arms[0].increaseTic()
-        sleep(1)
-
-Thread(target=advanceClock).start() 
-arms[0].initMovement()
+supervisor.addArms(arms)
+supervisor.runArms()

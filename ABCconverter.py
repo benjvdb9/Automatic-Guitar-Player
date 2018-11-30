@@ -1,8 +1,28 @@
 import re
 from time import sleep
 
+class Note:
+    def __init__(self, s_note):
+        self.note = s_note
+        self.notes= self.getNotes()
+
+    def getNotes(self):
+        #import pdb; pdb.set_trace()
+        regex = r'([=_^]?[a-zA-Z][,\']?\d?)\/(\d)'
+
+        if self.note[0] == '[' and self.note[-1] == ']':
+            notes = []
+            matches = re.finditer(regex, self.note, re.MULTILINE)
+            for matchnum, match in enumerate(matches):
+                notes += [match.group()]
+        else:
+            notes = [self.note]
+        return notes
+
+    def __str__(self):
+        return '<Note Object: {}>'.format(self.note)
+
 pattern = re.compile(r'(.): (.+)')
-note = re.compile(r'(?:[^_=]?[a-zA-Z][,\']?/[0-9]?)+')
 abc = open('resources/StayinAlive.abc', 'r')
 
 attributes = {}
@@ -14,12 +34,20 @@ for line in abc:
             values = match.groups()
             attributes[values[0]] = values[1] 
         except:
-            t = note.match(line)
-            print(t.groups())
+            all_notes = []
+            notes = line.split(' ')
+            all_notes += notes
             running = False
 
     else:
-        break
+        notes = line.split(' ')
+        all_notes += notes
 
+all_Notes = []
+for num in range(len(all_notes)):
+    if all_notes[num] != '':
+        all_Notes += [Note(all_notes[num])]
 
+for num in range(100):
+    print(all_Notes[num].getNotes())
 abc.close()
