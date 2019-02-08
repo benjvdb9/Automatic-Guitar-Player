@@ -2,9 +2,11 @@ from time import sleep
 from random import randint
 from threading import Thread
 from colorama import init, Fore, Style
+from rprint import print
 
+#40Hz - 1kHz
 class Arm(Thread):
-    id = 0;
+    id = 0
     colors = [Fore.RED, Fore.GREEN, Fore.BLUE,
               Fore.YELLOW, Fore.MAGENTA, Fore.CYAN]
     def __init__(self):
@@ -20,6 +22,7 @@ class Arm(Thread):
     def pprint(self, string):
         print(self.color + string.format(self.id) + '\r',
               flush=True)
+        #print(string.format(self.id))
 
     def increaseTic(self):
         self.tic += 1
@@ -31,19 +34,20 @@ class Arm(Thread):
     def initMovement(self):
         #import pdb;pdb.set_trace()
         if self.ready:
+            self.pprint(str(self.notes))
             for note in self.notes:
-                self.pprint(str(self.notes))
-                self.pprint(str(note))
+                self.pprint("from " + str(self.pos) + " to " + str(note[0]) + " until " + str(note[1]))
                 self.moveTo(note[0])
                 while note[1] >= self.tic:
-                    print(note[1] <= self.tic)
-                    self.pprint(str(self.tic))
-                    sleep(0.5)
-                    
+                    sleep(0.1)
+        else:
+            self.pprint("No notes available")
+
     def moveTo(self, destination):
         delta = abs(self.pos - destination)
         impulses = delta * self.IMPULSES_PER_DISTANCE
-        self.pprint('{}: '+'{} impulses'.format(impulses))
+        self.pprint('Arm {}: '+'{} impulses'.format(impulses))
+        self.pos = destination
 
     def getId():
         Arm.id+=1
@@ -63,10 +67,18 @@ class Supervisor:
     def runArms(self):
         for arm in self.arms:
             arm.start()
+        self.tic()
 
     def tic(self):
-        for arm in arms:
-            arm.increaseTic()
+        tic = 0
+        print("tic " + str(tic))
+        sleep(1)
+        while tic < 13:
+            for arm in self.arms:
+                arm.increaseTic()
+            print("tic " + str(tic))
+            tic += 1
+            sleep(1)
 
     def genRan(self):
         tuples = []
@@ -92,14 +104,15 @@ class Supervisor:
 
         return better_tuple
 
-init()
-supervisor = Supervisor()
+if __name__ == "__main__":
+    init()
+    supervisor = Supervisor()
 
-arms = []
-for num in range(6):
-    current_arm = Arm()
-    current_arm.setNotes(supervisor.genRan())
-    arms += [current_arm]
+    arms = []
+    for num in range(6):
+        current_arm = Arm()
+        current_arm.setNotes(supervisor.genRan())
+        arms += [current_arm]
 
-supervisor.addArms(arms)
-supervisor.runArms()
+    supervisor.addArms(arms)
+    supervisor.runArms()
