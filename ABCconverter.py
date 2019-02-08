@@ -45,11 +45,12 @@ for line in abc:
         notes = line.split(' ')
         all_notes += notes
 
+print(attributes)
 all_Notes = []
 for num in range(len(all_notes)):
     if all_notes[num] != '' and all_notes[num] != '\n':
         all_Notes += [Note(all_notes[num])]
 
-for num in range(100):
+for num in range(len(all_Notes)):
     print(all_Notes[num].getNotes())
 abc.close()
