@@ -3,15 +3,24 @@ from random import randint
 from threading import Thread
 from colorama import init, Fore, Style
 from rprint import print
+import RPi.GPIO as GPIO
 
 #40Hz - 1kHz
 class Arm(Thread):
     id = 0
     colors = [Fore.RED, Fore.GREEN, Fore.BLUE,
               Fore.YELLOW, Fore.MAGENTA, Fore.CYAN]
-    stepmotor_coeff = 100
-    distances = {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1,
-                 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1}
+    stepmotor_coeff = 200 #impulses for one rotation
+    stepmotor_pins  = [11, 13, 15, 19, 21, 23]
+    distances = {0: 1.75, 1: 5.35, 2: 8.7, 3: 11.85, 4: 14.8, 5: 17.6,
+                 6: 20.25, 7: 22.75, 8: 25.15, 9: 27.4, 10: 29.5, 11: 31.5}
+
+    pins = [[1, 1], [1, 1], [1, 1]
+            [1, 1], [1, 1], [1, 1]]
+
+    impulses = {}
+    for key in distances:
+        impulses[key] = distances[key]*stepmotor_coeff
     def __init__(self):
         self.id = Arm.getId()
         super().__init__(name = self.id)
@@ -21,6 +30,14 @@ class Arm(Thread):
         self.tic = 0
         self.IMPULSES_PER_DISTANCE = 1
         self.pprint('Initialized arm {}')
+
+        #Raspberry parameters
+        GPIO.setmode(GPIO.BCM)
+        self.dir_pin = pins[self.id - 1][0]
+        self.motor_pin = pins[self.id - 1][1]
+
+        GPIO.setup(self.dirPin, GPIO.OUT)
+        GPIO.setup(self.motor_pin, GPIO.OUT)
 
     #Utility, for testing use!------------------------------#
     def getId():
@@ -33,16 +50,31 @@ class Arm(Thread):
         #print(string.format(self.id))
     #-------------------------------------------------------#
 
-    #Timing based functions---------------------------------#
+    #Physical based functions-------------------------------#
     def nextTic(self):
         self.strum()
         self.increaseTic()
 
     def strum(self):
+        #PWM to motor, pins in stepmotor_pins
         self.pprint("strum string {}")
 
     def increaseTic(self):
         self.tic += 1
+
+    def moveMotor(self, forward, impulses):
+        if forward:
+            GPIO.output(self.dir_pin, GPIO.HIGH)
+        else:
+            GPIO.output(self.dir_pin, GPIO.LOW)
+
+        imp = 0
+        while imp < impulses:
+            GPIO.output(self.motor_pin, GPIO.HIGH)
+            sleep(0.0005) #~800Hz
+            GPIO.output(self.motor_pin, GPIO.LOW)
+            sleep(0.0005)
+            imp+=1
     #-------------------------------------------------------#
 
     #Run sequence, in order of execution--------------------#
@@ -66,9 +98,10 @@ class Arm(Thread):
             self.pprint("No notes available to play!")
 
     def moveTo(self, destination):
-        delta = abs(self.pos - destination)
-        impulses = delta * self.IMPULSES_PER_DISTANCE
+        delta = self.pos - destination
+        impulses = abs(delta * self.IMPULSES_PER_DISTANCE)
         self.pprint('Arm {}: '+'{} impulses'.format(impulses))
+        self.moveMotor(delta > 0, impulses)
         self.pos = destination
     #-------------------------------------------------------#
 
