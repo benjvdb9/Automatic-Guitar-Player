@@ -4,6 +4,7 @@ from threading import Thread
 from colorama import init, Fore, Style
 from rprint import print
 import RPi.GPIO as GPIO
+import smbus
 
 #40Hz - 1kHz
 class Arm(Thread):
@@ -29,6 +30,8 @@ class Arm(Thread):
         self.ready = False
         self.tic = 0
         self.IMPULSES_PER_DISTANCE = 1
+        self.bus = smbus.SMBus(1)
+        self.address = 0x12
         self.pprint('Initialized arm {}')
 
         #Raspberry parameters
@@ -58,6 +61,7 @@ class Arm(Thread):
     def strum(self):
         #PWM to motor, pins in stepmotor_pins
         self.pprint("strum string {}")
+        self.bus.write_byte(self.address, self.id)
 
     def increaseTic(self):
         self.tic += 1
