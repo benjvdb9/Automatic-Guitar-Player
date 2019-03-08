@@ -11,17 +11,19 @@ class Arm(Thread):
     id = 0
     colors = [Fore.RED, Fore.GREEN, Fore.BLUE,
               Fore.YELLOW, Fore.MAGENTA, Fore.CYAN]
-    stepmotor_coeff = 200 #impulses for one rotation
+    wait_freq = 0.005 #~800Hz
+    slider_coeff = 6 #distance for one rotation [cm / rot]
+    stepmotor_coeff = 200 #impulses for one rotation [imp / rot]
     stepmotor_pins  = [11, 13, 15, 19, 21, 23]
     distances = {0: 1.75, 1: 5.35, 2: 8.7, 3: 11.85, 4: 14.8, 5: 17.6,
-                 6: 20.25, 7: 22.75, 8: 25.15, 9: 27.4, 10: 29.5, 11: 31.5}
+                 6: 20.25, 7: 22.75, 8: 25.15, 9: 27.4, 10: 29.5, 11: 31.5} #distance [cm]
 
-    pins = [[1, 1], [1, 1], [1, 1]
+    pins = [[1, 1], [1, 1], [1, 1],
             [1, 1], [1, 1], [1, 1]]
 
     impulses = {}
     for key in distances:
-        impulses[key] = distances[key]*stepmotor_coeff
+        impulses[key] = (distances[key] / slider_coeff) * stepmotor_coeff
     def __init__(self):
         self.id = Arm.getId()
         super().__init__(name = self.id)
@@ -38,9 +40,11 @@ class Arm(Thread):
         GPIO.setmode(GPIO.BCM)
         self.dir_pin = pins[self.id - 1][0]
         self.motor_pin = pins[self.id - 1][1]
+        self.sensor_pin = 1
 
         GPIO.setup(self.dirPin, GPIO.OUT)
         GPIO.setup(self.motor_pin, GPIO.OUT)
+        GPIO.setup(self.sensor_pin, GPIO.IN)
 
     #Utility, for testing use!------------------------------#
     def getId():
@@ -61,7 +65,9 @@ class Arm(Thread):
     def strum(self):
         #PWM to motor, pins in stepmotor_pins
         self.pprint("strum string {}")
-        self.bus.write_byte(self.address, self.id)
+        if self.tic in self.ticlist:
+            print("Nothing")
+            self.bus.write_byte(self.address, self.id)
 
     def increaseTic(self):
         self.tic += 1
@@ -75,15 +81,25 @@ class Arm(Thread):
         imp = 0
         while imp < impulses:
             GPIO.output(self.motor_pin, GPIO.HIGH)
-            sleep(0.0005) #~800Hz
+            sleep(Arm.wait_freq) 
             GPIO.output(self.motor_pin, GPIO.LOW)
-            sleep(0.0005)
+            sleep(Arm.wait_freq)
             imp+=1
+
+    def synchArm(self):
+        self.moveTo(3)
+        while not GPIO.input(self.sensor_pin):
+            GPIO.output(self.motor_pin, GPIO.HIGH)
+            sleep(Arm.wait_freq)
+            GPIO.output(self.motor_pin, GPIO.LOW)
+            sleep(Arm.wait_freq)
+
     #-------------------------------------------------------#
 
     #Run sequence, in order of execution--------------------#
-    def setNotes(self, notes):
+    def setNotes(self, notes, tics):
         self.notes = notes
+        self.ticlist = tics
         self.ready = True
 
     def run(self):
@@ -133,6 +149,11 @@ class Supervisor:
             tic += 1
             sleep(self.tic_time)
 
+    def synch(self):
+        for arm in self.arms:
+            arm.synchArm()
+            arm.moveTo(1)
+
     def genRan(self):
         tuples = []
         for tupl in range(12):
@@ -155,7 +176,12 @@ class Supervisor:
             if len(tuples) == 0:
                 sorting = False
 
-        return better_tuple
+        better_list = []
+        for num in range(1, 12):
+            if randint(1, 10) <= 7:
+                better_list += [num]
+
+        return (better_tuple, better_list)
 
 if __name__ == "__main__":
     init()
@@ -164,7 +190,7 @@ if __name__ == "__main__":
     arms = []
     for num in range(2):
         current_arm = Arm()
-        current_arm.setNotes(supervisor.genRan())
+        current_arm.setNotes(*supervisor.genRan())
         arms += [current_arm]
 
     supervisor.addArms(arms)
