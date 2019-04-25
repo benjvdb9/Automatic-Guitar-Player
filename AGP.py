@@ -17,7 +17,8 @@ class Arm(Thread):
     stepmotor_pins  = [11, 13, 15, 19, 21, 23]
     distances = {0: 1.75, 1: 5.35, 2: 8.7, 3: 11.85, 4: 14.8, 5: 17.6,
                  6: 20.25, 7: 22.75, 8: 25.15, 9: 27.4, 10: 29.5, 11: 31.5} #distance [cm]
-
+    step_distances = {0: 60, 1: 180, 2: 300, 3: 400, 4: 500, 5: 17.6,
+                 6: 20.25, 7: 22.75, 8: 25.15, 9: 27.4, 10: 29.5, 11: 31.5} #distances [imp]
     pins = [[1, 1], [1, 1], [1, 1],
             [1, 1], [1, 1], [1, 1]]
 
@@ -55,6 +56,12 @@ class Arm(Thread):
         print(self.color + string.format(self.id) + '\r',
               flush=True)
         #print(string.format(self.id))
+
+    def changeID(self, ident):
+        self.id = ident
+        self.name = "test"
+        Arm.id = 0
+        
     #-------------------------------------------------------#
 
     #Physical based functions-------------------------------#
